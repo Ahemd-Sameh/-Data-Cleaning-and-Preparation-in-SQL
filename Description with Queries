@@ -1,0 +1,118 @@
+Description
+This project involves cleaning and preparing Nashville Housing data using various SQL techniques. The goal was to ensure 
+the data is standardized, complete, and ready for analysis. The process included standardizing date formats, populating missing data, 
+breaking out address components, changing coded values to readable text, removing duplicates, and deleting unused columns.
+
+Steps and Skills Demonstrated
+
+1. Standardizing Date Formats
+   Task: Convert date fields to a standard format.
+   SQL Techniques: CONVERT function, ALTER TABLE, and UPDATE statements.
+   Code:
+        ALTER TABLE NashvilleHousing
+        Add SaleDateConverted Date;
+        Update NashvilleHousing
+        SET SaleDateConverted = CONVERT(Date, SaleDate)
+
+2. Populating Missing Property Addresses
+   Task: Fill in missing property addresses by joining on ParcelID.
+   SQL Techniques: JOIN, ISNULL function, and UPDATE statements.
+   Code:
+        Update a
+        SET PropertyAddress = ISNULL(a.PropertyAddress, b.PropertyAddress)
+        From PortfolioProject.dbo.NashvilleHousing a
+        JOIN PortfolioProject.dbo.NashvilleHousing b
+        on a.ParcelID = b.ParcelID
+        AND a.[UniqueID ] <> b.[UniqueID ]
+        Where a.PropertyAddress is null
+
+3. Breaking Out Address into Individual Columns
+   Task: Split full address into separate components (Address, City, State).
+   SQL Techniques: SUBSTRING, CHARINDEX, ALTER TABLE, and UPDATE statements.
+   Code:
+        ALTER TABLE NashvilleHousing
+        Add PropertySplitAddress Nvarchar(255);
+        Update NashvilleHousing
+        SET PropertySplitAddress = SUBSTRING(PropertyAddress, 1, CHARINDEX(',', PropertyAddress) -1 );
+
+        ALTER TABLE NashvilleHousing
+        Add PropertySplitCity Nvarchar(255);
+        Update NashvilleHousing
+        SET PropertySplitCity = SUBSTRING(PropertyAddress, CHARINDEX(',', PropertyAddress) + 1 , LEN(PropertyAddress));
+
+        ALTER TABLE NashvilleHousing
+        Add OwnerSplitAddress Nvarchar(255);
+        Update NashvilleHousing
+        SET OwnerSplitAddress = PARSENAME(REPLACE(OwnerAddress, ',', '.') , 3);
+
+        ALTER TABLE NashvilleHousing
+        Add OwnerSplitCity Nvarchar(255);
+        Update NashvilleHousing
+        SET OwnerSplitCity = PARSENAME(REPLACE(OwnerAddress, ',', '.') , 2);
+
+        ALTER TABLE NashvilleHousing
+        Add OwnerSplitState Nvarchar(255);
+        Update NashvilleHousing
+        SET OwnerSplitState = PARSENAME(REPLACE(OwnerAddress, ',', '.') , 1);
+
+4. Changing Coded Values to Readable Text
+   Task: Convert 'Y' and 'N' in "Sold as Vacant" field to 'Yes' and 'No'.
+   SQL Techniques: CASE statements and UPDATE statements.
+   Code:
+        Update NashvilleHousing
+        SET SoldAsVacant = CASE When SoldAsVacant = 'Y' THEN 'Yes'
+                                When SoldAsVacant = 'N' THEN 'No'
+                          ELSE SoldAsVacant
+                          END
+
+5. Removing Duplicates
+   Task: Remove duplicate rows based on specific columns.
+   SQL Techniques: Common Table Expressions (CTEs) and ROW_NUMBER window function.
+   Code:
+        WITH RowNumCTE AS (
+        Select *,
+        ROW_NUMBER() OVER (
+        PARTITION BY ParcelID,
+                 PropertyAddress,
+                 SalePrice,
+                 SaleDate,
+                 LegalReference
+                 ORDER BY
+                 UniqueID
+                 ) row_num
+        From PortfolioProject.dbo.NashvilleHousing
+        )
+        Select *
+        From RowNumCTE
+        Where row_num > 1
+        Order by PropertyAddress
+
+6. Deleting Unused Columns
+   Task: Remove columns that are no longer needed.
+   SQL Techniques: ALTER TABLE and DROP COLUMN statements.
+   Code:
+        ALTER TABLE PortfolioProject.dbo.NashvilleHousing
+        DROP COLUMN OwnerAddress, TaxDistrict, PropertyAddress, SaleDate
+
+Conclusion
+This project showcases a comprehensive approach to data cleaning and preparation in SQL. The steps involved demonstrate 
+proficiency in standardizing data formats, handling missing values, splitting data into more granular components, converting 
+coded values, removing duplicates, and optimizing the dataset by removing unnecessary columns. This work ensures that the data 
+is clean, consistent, and ready for further analysis or reporting.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
